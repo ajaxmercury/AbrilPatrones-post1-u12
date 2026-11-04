@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence/orm https://jakarta.ee/xml/ns/persistence/orm/orm_3_0.xsd"
+                 version="3.0">
+
+    <entity class="com.empresa.reembolsos.dominio.SolicitudReembolso" name="SolicitudReembolso">
+        <table name="solicitudes_reembolso"/>
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+            <basic name="empleadoId">
+                <column nullable="false"/>
+            </basic>
+            <basic name="categoria">
+                <enumerated>STRING</enumerated>
+                <column nullable="false"/>
+            </basic>
+            <basic name="montoSolicitado">
+                <column nullable="false" precision="15" scale="2"/>
+            </basic>
+            <basic name="montoAprobado">
+                <column precision="15" scale="2"/>
+            </basic>
+            <basic name="fechaGasto">
+                <column nullable="false"/>
+            </basic>
+            <basic name="diasViaje">
+                <column nullable="false"/>
+            </basic>
+            <basic name="documentosSoporte">
+                <column nullable="false"/>
+            </basic>
+            <basic name="estado">
+                <enumerated>STRING</enumerated>
+                <column nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
+</entity-mappings>
