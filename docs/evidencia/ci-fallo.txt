@@ -1,0 +1,33 @@
+Run ID: 41919641480
+Job: arquitectura
+Trigger: Push commit 5f87e36 ("test: violacion de arquitectura intencional")
+Status: Failed (Exit code 1)
+
+==================== LOG DE ERROR DE GITHUB ACTIONS ====================
+[INFO] Running com.empresa.reembolsos.ReglasArquitectura
+[ERROR] Tests run: 4, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 1.378 s <<< FAILURE! -- in com.empresa.reembolsos.ReglasArquitectura
+[ERROR] ReglasArquitectura.procesamientoSinPersistenciaNiWeb -- Time elapsed: 1.361 s <<< FAILURE!
+java.lang.AssertionError: 
+Architecture Violation [Priority: MEDIUM] - Rule 'no classes that reside in a package '..procesamiento..' should depend on classes that reside in any package ['..infraestructura..', '..adaptadores..', 'org.springframework.data..', 'jakarta.persistence..']' was violated (1 times):
+Field <com.empresa.reembolsos.procesamiento.validacion.ValidadorDuplicados.repositorioSolicitudesJpa> has type <com.empresa.reembolsos.infraestructura.RepositorioSolicitudesJpa> in (ValidadorDuplicados.java:0)
+	at com.tngtech.archunit.lang.ArchRule$Assertions.assertNoViolation(ArchRule.java:94)
+	at com.tngtech.archunit.lang.ArchRule$Assertions.check(ArchRule.java:86)
+	at com.tngtech.archunit.lang.ArchRule$Factory$SimpleArchRule.check(ArchRule.java:165)
+	at com.tngtech.archunit.lang.syntax.ObjectsShouldInternal.check(ObjectsShouldInternal.java:81)
+	at com.tngtech.archunit.junit.internal.ArchUnitTestDescriptor$ArchUnitRuleDescriptor.execute(ArchUnitTestDescriptor.java:166)
+	at com.tngtech.archunit.junit.internal.ArchUnitTestDescriptor$ArchUnitRuleDescriptor.execute(ArchUnitTestDescriptor.java:149)
+
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   Architecture Violation [Priority: MEDIUM] - Rule 'no classes that reside in a package '..procesamiento..' should depend on classes that reside in any package ['..infraestructura..', '..adaptadores..', 'org.springframework.data..', 'jakarta.persistence..']' was violated (1 times):
+Field <com.empresa.reembolsos.procesamiento.validacion.ValidadorDuplicados.repositorioSolicitudesJpa> has type <com.empresa.reembolsos.infraestructura.RepositorioSolicitudesJpa> in (ValidadorDuplicados.java:0)
+[INFO] 
+[ERROR] Tests run: 4, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test (default-test) on project reembolsos-integrado: There are test failures.
+##[error]Process completed with exit code 1.
+

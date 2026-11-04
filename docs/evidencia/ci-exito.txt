@@ -1,0 +1,35 @@
+Run ID: 41919806514
+Job: arquitectura
+Trigger: Push commit d470e6b (Revert "test: violacion de arquitectura intencional")
+Status: Completed Success (Exit code 0)
+
+==================== RESUMEN DE EJECUCION DE GITHUB ACTIONS ====================
+Paso: Ejecutar reglas de arquitectura
+[INFO] Running com.empresa.reembolsos.ReglasArquitectura
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.258 s -- in com.empresa.reembolsos.ReglasArquitectura
+[INFO] Results:
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+Paso: Ejecutar suite completa de pruebas
+[INFO] Running com.empresa.reembolsos.procesamiento.calculo.CalculadoraCapacitacionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.empresa.reembolsos.procesamiento.calculo.CalculadoraRepresentacionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.empresa.reembolsos.procesamiento.calculo.CalculadoraViajeTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.empresa.reembolsos.procesamiento.notificacion.NotificadorContabilidadTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.empresa.reembolsos.procesamiento.validacion.ValidadorDocumentosSoporteTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.empresa.reembolsos.procesamiento.validacion.ValidadorDuplicadosTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.empresa.reembolsos.procesamiento.validacion.ValidadorMontoMaximoTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.empresa.reembolsos.SolicitudReembolsoIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.empresa.reembolsos.ReglasArquitectura
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Results:
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

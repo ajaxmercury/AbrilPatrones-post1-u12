@@ -8,6 +8,19 @@
 
 ---
 
+## Índice
+1. [Diseño Propuesto (Análisis Previo a la Implementación)](#1-diseño-propuesto-análisis-previo-a-la-implementación)
+2. [Descripción de la Arquitectura y Estructura de Paquetes](#2-descripción-de-la-arquitectura-y-estructura-de-paquetes)
+3. [Decisiones de Diseño (1 a 4)](#3-decisiones-de-diseño)
+4. [Resumen del ADR-001 (Arquitectura de Persistencia y Notificación)](#4-resumen-del-adr-001)
+5. [Análisis de Impacto — Qué se Descartó por Sobreingeniería](#5-análisis-de-impacto--qué-se-descartó-por-sobreingeniería)
+6. [Resultados de Pruebas y Validación Automatizada](#6-resultados-de-pruebas-y-validación-automatizada)
+7. [Evidencia del Pipeline de Integración Continua (GitHub Actions)](#7-evidencia-del-pipeline-de-integración-continua-github-actions)
+8. [Historial de Commits](#8-historial-de-commits)
+9. [Checklist de Cumplimiento contra la Rúbrica](#9-checklist-de-cumplimiento-contra-la-rúbrica)
+
+---
+
 ## 1. Diseño Propuesto (Análisis Previo a la Implementación)
 
 En concordancia con el lineamiento pedagógico del Proyecto Integrador, se identificaron los puntos de variabilidad de los tres requisitos funcionales y se seleccionaron los patrones de diseño GoF correspondientes, aplicando el **test de explicabilidad** (justificación técnica concreta de una oración por requisito):
@@ -63,6 +76,9 @@ src/main/java/com/empresa/reembolsos/
 ### Mapeo de Entidad con `META-INF/orm.xml` (Corrección al Enunciado)
 Para mantener la clase `SolicitudReembolso` 100% limpia sin anotaciones `@Entity`, `@Table` ni dependencias de `jakarta.persistence.*`, se utilizó el estándar JPA mediante el descriptor XML `src/main/resources/META-INF/orm.xml` configurado en `application.properties` con `spring.jpa.mapping-resources=META-INF/orm.xml`. Esto permite que `RepositorioSolicitudesJpa` extienda `JpaRepository<SolicitudReembolso, Long>` mientras la entidad de dominio preserva su pureza arquitectónica.
 
+### Ubicación de `SelectorCalculadora` (Corrección al Enunciado)
+La Regla 3 de ArchUnit estipula que toda clase concreta dentro de `..procesamiento.calculo..` debe implementar `CalculadoraReembolso`. Ubicar `SelectorCalculadora` en ese subpaquete causaba una violación arquitectónica. Por ello, se ubicó correctamente en la raíz de `com.empresa.reembolsos.procesamiento`, manteniendo la cohesión del módulo sin violentar la regla.
+
 ---
 
 ## 3. Decisiones de Diseño
@@ -77,9 +93,9 @@ $$\text{ValidadorDocumentosSoporte} \longrightarrow \text{ValidadorMontoMaximo} 
 1. **Criterio de costo computacional decreciente (Fail-Fast):**
    - `ValidadorDocumentosSoporte`: Operación booleana elemental en memoria de costo $O(1)$. Si faltan los comprobantes, aborta inmediatamente.
    - `ValidadorMontoMaximo`: Comparación aritmética $O(1)$ de `BigDecimal` contra una tabla estática en memoria.
-   - `ValidadorDuplicados`: Recorrido iterativo $O(N)$ sobre una colección de solicitudes previas con filtrado por categoría y mes calendario, habiendo requerido previamente una consulta a base de datos.
-2. **Qué se gana:** Se maximiza la eficiencia y la tasa de procesamiento del sistema al descartar solicitudes defectuosas en las etapas más económicas en tiempo de CPU y memoria, evitando ejecutar la lógica de duplicados en casos no viables.
-3. **Qué se pierde:** Si en un escenario particular el 90% de los rechazos fuera por solicitudes duplicadas pero con documentos y montos impecables, evaluar primero las reglas simples introduce microsegundos de trabajo que no habrían sido estrictamente necesarios. Sin embargo, en arquitectura corporativa el principio de menor costo primero es el estándar para prevenir sobrecargas.
+   - `ValidadorDuplicados`: Recorrido iterativo $O(N)$ sobre una colección de solicitudes previas con filtrado por categoría y mes calendario, habiendo requerido previamente una consulta I/O a base de datos.
+2. **Qué se gana:** Se maximiza la eficiencia y el rendimiento global del sistema al descartar solicitudes defectuosas en las etapas más económicas en tiempo de CPU y memoria, evitando ejecutar la lógica de duplicados en casos no viables.
+3. **Qué se pierde:** Si en un escenario particular el 90% de los rechazos fuera por solicitudes duplicadas pero con documentos y montos válidos, evaluar primero las reglas simples introduce microsegundos de trabajo que no habrían sido estrictamente necesarios. Sin embargo, en arquitectura corporativa el principio de menor costo primero es el estándar para prevenir sobrecargas.
 
 ---
 
@@ -111,7 +127,7 @@ public class SelectorCalculadora {
 > **Pregunta:** *¿El sistema completo debe migrar a arquitectura Hexagonal completa con puertos para persistencia y notificación, o mantenerse en capas simples?*
 
 **Justificación:**
-Documentado formalmente en `docs/adr/ADR-001.md`:
+Documentado formalmente en [docs/adr/ADR-001.md](file:///C:/Users/david/.gemini/antigravity/scratch/AbrilPatrones-post1-u12/docs/adr/ADR-001.md):
 1. **Persistencia:** Se mantiene en capas simples (`SolicitudReembolsoService` depende directamente de `RepositorioSolicitudesJpa`). Hoy no existe ningún plan ni requerimiento de cambiar el motor de base de datos relacional. Introducir un puerto de persistencia con adaptadores y mapeadores manuales en este momento sería una abstracción especulativa que violaría YAGNI (*You Aren't Gonna Need It*).
 2. **Notificación:** No requiere cambios adicionales porque la interfaz `ObservadorCambioEstado` ya funge como el *seam* (punto de costura) arquitectónico necesario. Cuando Contabilidad conecte su API externa el próximo trimestre, únicamente se modificará el interior de `NotificadorContabilidad` sin impactar el servicio ni a los demás interesados.
 
@@ -127,9 +143,20 @@ Documentado formalmente en `docs/adr/ADR-001.md`:
 
 ---
 
-## 4. Análisis de Impacto — Qué se Descartó por Sobreingeniería
+## 4. Resumen del ADR-001
 
-Siguiendo las directrices de diseño consciente (Guía, sección 4.2), se documentan tanto los ejemplos de referencia como las decisiones de descarte tomadas durante el desarrollo:
+El documento formal de decisión arquitectónica reside en [`docs/adr/ADR-001.md`](file:///C:/Users/david/.gemini/antigravity/scratch/AbrilPatrones-post1-u12/docs/adr/ADR-001.md):
+- **Título:** Capas simples para persistencia; el seam de notificación ya cubre el próximo cambio conocido.
+- **Estado:** Aceptado — 2026-11-04.
+- **Contexto:** Evaluación de migración a Arquitectura Hexagonal vs. capas simples tras implementar los patrones GoF.
+- **Decisión:** Conservar persistencia en capas simples (sin puerto `RepositorioSolicitudes` artificial) y mantener el seam de `ObservadorCambioEstado` para la futura integración con la API de Contabilidad.
+- **Consecuencias:** Máxima simplicidad, ausencia de mapeadores innecesarios, y aceptación consciente de la asimetría entre persistencia (capas) y notificación (desacoplada).
+
+---
+
+## 5. Análisis de Impacto — Qué se Descartó por Sobreingeniería
+
+Siguiendo las directrices de diseño consciente (Guía, sección 4.2), se documentan los patrones y alternativas descartados justificando su rechazo:
 
 ### 1. Spring `ApplicationEventPublisher` en lugar de `List<ObservadorCambioEstado>`
 - **Qué se consideró:** Publicar eventos de dominio mediante `ApplicationEventPublisher.publishEvent()` y manejar las reacciones con `@EventListener` en los notificadores.
@@ -153,9 +180,9 @@ Siguiendo las directrices de diseño consciente (Guía, sección 4.2), se docume
 
 ---
 
-## 5. Resultados de Pruebas y Validación Arquitectónica
+## 6. Resultados de Pruebas y Validación Automatizada
 
-### 5.1 Suite Completa (`mvn verify`): 21 Pruebas en Verde
+La suite completa consta de **21 pruebas automatizadas** que se ejecutan tanto localmente con `mvn verify` como en el pipeline de GitHub Actions:
 
 ```text
 [INFO] -------------------------------------------------------
@@ -188,7 +215,51 @@ Siguiendo las directrices de diseño consciente (Guía, sección 4.2), se docume
 
 ---
 
-## 6. Historial de Commits
+## 7. Evidencia del Pipeline de Integración Continua (GitHub Actions)
+
+El archivo de configuración del flujo de trabajo reside en [`.github/workflows/arquitectura.yml`](file:///C:/Users/david/.gemini/antigravity/scratch/AbrilPatrones-post1-u12/.github/workflows/arquitectura.yml).
+
+### 7.1 Prueba de Violación Intencional (Fallo en Rojo)
+Se introdujo intencionalmente una dependencia hacia la infraestructura dentro de `ValidadorDuplicados`:
+```java
+// ValidadorDuplicados.java (Commit 5f87e36)
+import com.empresa.reembolsos.infraestructura.RepositorioSolicitudesJpa;
+private RepositorioSolicitudesJpa repositorioSolicitudesJpa;
+```
+
+**Resultado en GitHub Actions (Run ID: 41919641480):**
+El pipeline falló de inmediato al ejecutar el paso `Ejecutar reglas de arquitectura`:
+```text
+[ERROR] Failures: 
+[ERROR] Architecture Violation [Priority: MEDIUM] - Rule 'no classes that reside in a package '..procesamiento..' should depend on classes that reside in any package ['..infraestructura..', '..adaptadores..', 'org.springframework.data..', 'jakarta.persistence..']' was violated (1 times):
+Field <com.empresa.reembolsos.procesamiento.validacion.ValidadorDuplicados.repositorioSolicitudesJpa> has type <com.empresa.reembolsos.infraestructura.RepositorioSolicitudesJpa> in (ValidadorDuplicados.java:0)
+[ERROR] BUILD FAILURE
+##[error]Process completed with exit code 1.
+```
+*Evidencia completa registrada en:* [`docs/evidencia/ci-fallo.txt`](file:///C:/Users/david/.gemini/antigravity/scratch/AbrilPatrones-post1-u12/docs/evidencia/ci-fallo.txt).
+
+### 7.2 Corrección Mediante Revert (Éxito en Verde)
+Se revirtió el commit de violación mediante `git revert HEAD --no-edit` (Commit `d470e6b`).
+
+**Resultado en GitHub Actions (Run ID: 41919806514):**
+El pipeline se ejecutó con éxito en 23 segundos, pasando tanto las 4 reglas de arquitectura como las 21 pruebas del sistema en verde:
+```text
+JOBS
+✓ arquitectura in 23s (ID 126888994232)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Configurar Java 17
+  ✓ Ejecutar reglas de arquitectura
+  ✓ Ejecutar suite completa de pruebas
+  ✓ Post Configurar Java 17
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+```
+*Evidencia completa registrada en:* [`docs/evidencia/ci-exito.txt`](file:///C:/Users/david/.gemini/antigravity/scratch/AbrilPatrones-post1-u12/docs/evidencia/ci-exito.txt).
+
+---
+
+## 8. Historial de Commits
 
 | # | Hash | Mensaje de Commit |
 |---|---|---|
@@ -200,15 +271,18 @@ Siguiendo las directrices de diseño consciente (Guía, sección 4.2), se docume
 | 6 | `9c5aaf9` | `docs: agregar ADR-001 con la decision arquitectonica de persistencia y notificacion` |
 | 7 | `6c0e3fd` | `test: agregar dependencia ArchUnit y las 4 reglas de arquitectura en ReglasArquitectura` |
 | 8 | `45e491b` | `ci: agregar workflow de GitHub Actions para validacion arquitectonica` |
-| 9 | *(este)* | `docs: documentar analisis de impacto y patrones descartados por sobreingenieria` |
+| 9 | `c829435` | `docs: documentar analisis de impacto y patrones descartados por sobreingenieria` |
+| 10 | `5f87e36` | `test: violacion de arquitectura intencional` *(pipeline en rojo)* |
+| 11 | `d470e6b` | `Revert "test: violacion de arquitectura intencional"` *(pipeline en verde)* |
+| 12 | *(este)* | `docs: consolidar README con diseno propuesto, decisiones, ADR y analisis de impacto` |
 
 ---
 
-## 7. Checklist de Cumplimiento contra la Rúbrica
+## 9. Checklist de Cumplimiento contra la Rúbrica
 
 | Criterio | Peso | Estado | Evidencia de Cumplimiento |
 |---|---|:---:|---|
 | **Implementación** | 40% | **100% (Excelente)** | • Sección "Diseño Propuesto" documentada previa al código en Commit 1.<br>• Chain of Responsibility (RF1), Strategy (RF2) y Observer (RF3) implementados y coordinados.<br>• ADR-001 documentado con fecha real y justificación técnica concreta de persistencia y notificación.<br>• Reglas ArchUnit implementadas y pasando en verde.<br>• Análisis de sobreingeniería con ejemplos de referencia y elementos propios justificados en YAGNI, KISS y Rule of Three. |
-| **Funcionalidad** | 25% | **100% (Excelente)** | • Flujo completo funcionando para las 3 categorías (`VIAJE`, `REPRESENTACION`, `CAPACITACION`).<br>• Rechazo y validaciones operando.<br>• Transiciones de estado notificando a los 3 observadores con `NotificadorContabilidad` filtrando solo `APROBADA`.<br>• Pipeline de GitHub Actions ejecutando ArchUnit y suite de pruebas. |
+| **Funcionalidad** | 25% | **100% (Excelente)** | • Flujo completo funcionando para las 3 categorías (`VIAJE`, `REPRESENTACION`, `CAPACITACION`).<br>• Rechazo y validaciones operando.<br>• Transiciones de estado notificando a los 3 observadores con `NotificadorContabilidad` filtrando solo `APROBADA`.<br>• Pipeline de GitHub Actions ejecutando ArchUnit y suite de pruebas, con build fallido intencional y posterior resolución en verde en el historial real. |
 | **Documentación** | 20% | **100% (Excelente)** | • README estructurado con Diseño Propuesto, arquitectura, Decisiones 1 a 4 con justificación exhaustiva, ADR-001 completo y sección "Qué se descartó y por qué". |
 | **Estilo y Convenciones** | 15% | **100% (Excelente)** | • Código conforme a convenciones Java.<br>• Javadoc en las interfaces de patrones (`ValidadorSolicitud`, `CalculadoraReembolso`, `ObservadorCambioEstado`).<br>• Estructura de paquetes estricta.<br>• Nombres descriptivos en reglas ArchUnit y commits descriptivos y ordenados. |
